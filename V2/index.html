@@ -6,9 +6,7 @@
     <title>SVG Laser Cutter Viewer – Precision Zoom & Pan</title>
     <style>
         :root {
-            --toolbar-position: bottom;
-            --toolbar-offset: 30px;
-            --settings-open: false;
+            --toolbar-offset: 20px;
         }
 
         body {
@@ -58,7 +56,6 @@
             display: block;
         }
 
-        /* IMPORTANT: Make thin lines visible */
         #main-svg * {
             vector-effect: non-scaling-stroke;
         }
@@ -74,27 +71,41 @@
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
             z-index: 1000;
             border: 1px solid rgba(0,0,0,0.1);
-            cursor: move;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             touch-action: none;
-        }
-
-        .toolbar.dragging {
-            cursor: grabbing;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.3);
-            transform: scale(1.05);
-        }
-
-        .toolbar.bottom {
+            pointer-events: all;
             bottom: var(--toolbar-offset);
             left: 50%;
             transform: translateX(-50%);
+            flex-direction: row;
+        }
+
+        .toolbar.dragging {
+            transition: none;
+            cursor: grabbing;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+            transform: none !important;
+            left: auto !important;
+            top: auto !important;
+            right: auto !important;
+            bottom: auto !important;
         }
 
         .toolbar.top {
             top: var(--toolbar-offset);
             left: 50%;
             transform: translateX(-50%);
+            flex-direction: row;
+            bottom: auto;
+        }
+
+        .toolbar.bottom {
+            bottom: var(--toolbar-offset);
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: row;
+            top: auto;
         }
 
         .toolbar.left {
@@ -102,6 +113,7 @@
             top: 50%;
             transform: translateY(-50%);
             flex-direction: column;
+            bottom: auto;
         }
 
         .toolbar.right {
@@ -109,6 +121,7 @@
             top: 50%;
             transform: translateY(-50%);
             flex-direction: column;
+            left: auto;
         }
 
         .toolbar button {
@@ -126,6 +139,8 @@
             transition: all 0.2s ease;
             border: 1px solid #ddd;
             font-weight: bold;
+            pointer-events: all;
+            flex-shrink: 0;
         }
 
         .toolbar button:hover {
@@ -154,11 +169,11 @@
             border: 1px solid #ddd;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            pointer-events: none;
         }
 
         .zoom-indicator.hidden {
             opacity: 0;
-            pointer-events: none;
         }
 
         .zoom-indicator span {
@@ -435,6 +450,26 @@
             opacity: 1;
             pointer-events: all;
         }
+
+        .drag-hint {
+            position: fixed;
+            bottom: 50%;
+            left: 50%;
+            transform: translate(-50%, 50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1500;
+        }
+
+        .drag-hint.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -503,6 +538,8 @@
         <button id="zoom-fit" title="Fit to Screen">⤢</button>
     </div>
 
+    <div class="drag-hint" id="drag-hint">Release to snap to edge</div>
+
     <div class="help-overlay" id="help-overlay"></div>
     <div class="help-modal" id="help-modal">
         <button class="close-btn" id="help-close">&times;</button>
@@ -517,6 +554,7 @@
             <li><span class="key-icon">←→↑↓</span> Pan with arrow keys</li>
             <li><span class="key-icon">📁</span> Load your own SVG files</li>
             <li><span class="key-icon">⚙️</span> Open settings panel</li>
+            <li><span class="key-icon">↔️</span> Drag toolbar to reposition</li>
         </ul>
     </div>
 
@@ -540,6 +578,7 @@
             const toggleThicken = document.getElementById('toggle-thicken');
             const toggleZoomIndicator = document.getElementById('toggle-zoom-indicator');
             const toggleGrid = document.getElementById('toggle-grid');
+            const dragHint = document.getElementById('drag-hint');
 
             let currentZoom = 1;
             let minZoom = 0.01;
@@ -552,13 +591,6 @@
             let thickLinesEnabled = true;
             let settingsOpen = false;
             let helpOpen = false;
-
-            // Toolbar dragging
-            let isDraggingToolbar = false;
-            let toolbarDragStartX = 0;
-            let toolbarDragStartY = 0;
-            let toolbarStartLeft = 0;
-            let toolbarStartTop = 0;
 
             function getCurrentSvg() {
                 return document.getElementById('main-svg');
@@ -668,74 +700,41 @@
                 }
             });
 
-            // Toolbar dragging
+            // FIXED TOOLBAR DRAGGING
+            let isDraggingToolbar = false;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
+
             toolbar.addEventListener('mousedown', (e) => {
                 if (e.target.tagName === 'BUTTON') return;
                 
                 isDraggingToolbar = true;
-                toolbarDragStartX = e.clientX;
-                toolbarDragStartY = e.clientY;
                 
+                // Get current position
                 const rect = toolbar.getBoundingClientRect();
-                toolbarStartLeft = rect.left;
-                toolbarStartTop = rect.top;
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
                 
+                // Set dragging styles
                 toolbar.classList.add('dragging');
+                toolbar.style.left = rect.left + 'px';
+                toolbar.style.top = rect.top + 'px';
+                dragHint.classList.add('show');
+                
                 e.preventDefault();
             });
 
-            window.addEventListener('mousemove', (e) => {
+            document.addEventListener('mousemove', (e) => {
                 if (isDraggingToolbar) {
-                    const dx = e.clientX - toolbarDragStartX;
-                    const dy = e.clientY - toolbarDragStartY;
+                    const newLeft = e.clientX - dragOffsetX;
+                    const newTop = e.clientY - dragOffsetY;
                     
-                    const newLeft = toolbarStartLeft + dx;
-                    const newTop = toolbarStartTop + dy;
+                    // Keep toolbar within viewport
+                    const maxLeft = window.innerWidth - toolbar.offsetWidth;
+                    const maxTop = window.innerHeight - toolbar.offsetHeight;
                     
-                    // Determine nearest edge
-                    const windowWidth = window.innerWidth;
-                    const windowHeight = window.innerHeight;
-                    const toolbarRect = toolbar.getBoundingClientRect();
-                    
-                    // Remove all position classes
-                    toolbar.classList.remove('bottom', 'top', 'left', 'right');
-                    
-                    // Set fixed positioning
-                    toolbar.style.position = 'fixed';
-                    toolbar.style.left = newLeft + 'px';
-                    toolbar.style.top = newTop + 'px';
-                    toolbar.style.bottom = 'auto';
-                    toolbar.style.right = 'auto';
-                    toolbar.style.transform = 'none';
-                    
-                    // Check if near edges and snap
-                    const snapThreshold = 50;
-                    
-                    if (newTop < snapThreshold) {
-                        toolbar.classList.add('top');
-                        toolbar.style.left = '50%';
-                        toolbar.style.top = 'auto';
-                        toolbar.style.transform = 'translateX(-50%)';
-                        toolbar.style.flexDirection = 'row';
-                    } else if (newTop + toolbarRect.height > windowHeight - snapThreshold) {
-                        toolbar.classList.add('bottom');
-                        toolbar.style.left = '50%';
-                        toolbar.style.top = 'auto';
-                        toolbar.style.transform = 'translateX(-50%)';
-                        toolbar.style.flexDirection = 'row';
-                    } else if (newLeft < snapThreshold) {
-                        toolbar.classList.add('left');
-                        toolbar.style.left = 'auto';
-                        toolbar.style.top = '50%';
-                        toolbar.style.transform = 'translateY(-50%)';
-                        toolbar.style.flexDirection = 'column';
-                    } else if (newLeft + toolbarRect.width > windowWidth - snapThreshold) {
-                        toolbar.classList.add('right');
-                        toolbar.style.left = 'auto';
-                        toolbar.style.top = '50%';
-                        toolbar.style.transform = 'translateY(-50%)';
-                        toolbar.style.flexDirection = 'column';
-                    }
+                    toolbar.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
+                    toolbar.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
                 } else if (isPanning) {
                     const dx = e.clientX - startPanX;
                     const dy = e.clientY - startPanY;
@@ -747,11 +746,43 @@
                 }
             });
 
-            window.addEventListener('mouseup', () => {
+            document.addEventListener('mouseup', (e) => {
                 if (isDraggingToolbar) {
                     isDraggingToolbar = false;
                     toolbar.classList.remove('dragging');
+                    dragHint.classList.remove('show');
+                    
+                    // Snap to nearest edge
+                    const rect = toolbar.getBoundingClientRect();
+                    const windowWidth = window.innerWidth;
+                    const windowHeight = window.innerHeight;
+                    
+                    const distTop = rect.top;
+                    const distBottom = windowHeight - rect.bottom;
+                    const distLeft = rect.left;
+                    const distRight = windowWidth - rect.right;
+                    
+                    const minDist = Math.min(distTop, distBottom, distLeft, distRight);
+                    
+                    // Clear inline styles
+                    toolbar.style.left = '';
+                    toolbar.style.top = '';
+                    
+                    // Remove all position classes
+                    toolbar.classList.remove('top', 'bottom', 'left', 'right');
+                    
+                    // Add appropriate class
+                    if (minDist === distTop) {
+                        toolbar.classList.add('top');
+                    } else if (minDist === distBottom) {
+                        toolbar.classList.add('bottom');
+                    } else if (minDist === distLeft) {
+                        toolbar.classList.add('left');
+                    } else {
+                        toolbar.classList.add('right');
+                    }
                 }
+                
                 if (isPanning) {
                     isPanning = false;
                     container.style.cursor = 'grab';
