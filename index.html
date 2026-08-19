@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            background-color: #e8e8e8;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
             height: 100vh;
@@ -47,11 +47,9 @@
             height: auto;
             filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
             transform-origin: center center;
-            transition: transform 0.05s ease-out;
             will-change: transform;
             background-color: #ffffff;
-            min-width: 100px;
-            min-height: 100px;
+            display: block;
         }
 
         .toolbar {
@@ -178,46 +176,46 @@
             <path d="M19 13v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6M12 3v12m0-12 4 4m-4-4-4 4" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         SVG laden
-        <input type="file" id="svg-file-input" accept=".svg" multiple>
+        <input type="file" id="svg-file-input" accept=".svg">
     </label>
 
     <div id="svg-container">
-        <!-- Container für SVG-Inhalt -->
-        <div id="svg-wrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-            <!-- Standard Demo-SVG mit typischen Laser-Linien in Originalfarben -->
-            <svg id="main-svg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
-                <!-- Hintergrund Kontur in Schwarz -->
-                <rect x="10" y="10" width="780" height="580" fill="none" stroke="#000000" stroke-width="2"/>
-                
-                <!-- Linien in verschiedenen Farben (wie typisch für Lasercutting) -->
-                <line x1="20" y1="300" x2="780" y2="300" stroke="#000000" stroke-width="1"/>
-                <line x1="400" y1="20" x2="400" y2="580" stroke="#000000" stroke-width="1"/>
-                
-                <!-- Diagonalen in Rot für Schnittlinien -->
-                <line x1="20" y1="20" x2="780" y2="580" stroke="#ff0000" stroke-width="1"/>
-                <line x1="780" y1="20" x2="20" y2="580" stroke="#ff0000" stroke-width="1"/>
-                
-                <!-- Kreise in Blau für Gravur -->
-                <circle cx="400" cy="300" r="180" fill="none" stroke="#0000ff" stroke-width="1"/>
-                <circle cx="400" cy="300" r="100" fill="none" stroke="#0000ff" stroke-width="1" stroke-dasharray="10,5"/>
-                
-                <!-- Rechtecke in Grün -->
-                <rect x="150" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
-                <rect x="570" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
-                <rect x="150" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
-                <rect x="570" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
-                
-                <!-- Polygon in Orange -->
-                <polygon points="300,200 500,200 550,350 250,350" fill="none" stroke="#ff6600" stroke-width="1.5"/>
-                
-                <!-- Text Beispiel (für Gravur) in Dunkelgrau -->
-                <text x="400" y="500" font-family="Arial" font-size="30" fill="#333333" stroke="none" text-anchor="middle" dominant-baseline="middle">LASER</text>
-                
-                <!-- Feine Muster in Lila -->
-                <path d="M100,450 L200,450 L150,500 Z" fill="none" stroke="#6600cc" stroke-width="1"/>
-                <path d="M700,450 L600,450 L650,500 Z" fill="none" stroke="#6600cc" stroke-width="1"/>
-            </svg>
-        </div>
+        <!-- Standard Demo-SVG mit typischen Laser-Linien in Originalfarben -->
+        <svg id="main-svg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" style="width: 800px; height: 600px;">
+            <!-- Weißer Hintergrund -->
+            <rect width="800" height="600" fill="white"/>
+            
+            <!-- Hintergrund Kontur in Schwarz -->
+            <rect x="10" y="10" width="780" height="580" fill="none" stroke="#000000" stroke-width="2"/>
+            
+            <!-- Linien in verschiedenen Farben (wie typisch für Lasercutting) -->
+            <line x1="20" y1="300" x2="780" y2="300" stroke="#000000" stroke-width="1"/>
+            <line x1="400" y1="20" x2="400" y2="580" stroke="#000000" stroke-width="1"/>
+            
+            <!-- Diagonalen in Rot für Schnittlinien -->
+            <line x1="20" y1="20" x2="780" y2="580" stroke="#ff0000" stroke-width="1"/>
+            <line x1="780" y1="20" x2="20" y2="580" stroke="#ff0000" stroke-width="1"/>
+            
+            <!-- Kreise in Blau für Gravur -->
+            <circle cx="400" cy="300" r="180" fill="none" stroke="#0000ff" stroke-width="1"/>
+            <circle cx="400" cy="300" r="100" fill="none" stroke="#0000ff" stroke-width="1" stroke-dasharray="10,5"/>
+            
+            <!-- Rechtecke in Grün -->
+            <rect x="150" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
+            <rect x="570" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
+            <rect x="150" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
+            <rect x="570" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
+            
+            <!-- Polygon in Orange -->
+            <polygon points="300,200 500,200 550,350 250,350" fill="none" stroke="#ff6600" stroke-width="1.5"/>
+            
+            <!-- Text Beispiel (für Gravur) in Dunkelgrau -->
+            <text x="400" y="500" font-family="Arial" font-size="30" fill="#333333" text-anchor="middle" dominant-baseline="middle">LASER</text>
+            
+            <!-- Feine Muster in Lila -->
+            <path d="M100,450 L200,450 L150,500 Z" fill="none" stroke="#6600cc" stroke-width="1"/>
+            <path d="M700,450 L600,450 L650,500 Z" fill="none" stroke="#6600cc" stroke-width="1"/>
+        </svg>
     </div>
 
     <div class="toolbar">
@@ -234,7 +232,6 @@
     <script>
         (function() {
             const container = document.getElementById('svg-container');
-            const svgWrapper = document.getElementById('svg-wrapper');
             const zoomLevelEl = document.getElementById('zoom-level');
             const zoomInBtn = document.getElementById('zoom-in');
             const zoomOutBtn = document.getElementById('zoom-out');
@@ -243,14 +240,13 @@
             const fileInput = document.getElementById('svg-file-input');
 
             let currentZoom = 1;
-            let minZoom = 0.1;
-            let maxZoom = 50;
+            let minZoom = 0.01;
+            let maxZoom = 100;
             let panX = 0;
             let panY = 0;
             let startPanX = 0;
             let startPanY = 0;
             let isPanning = false;
-            let currentSvg = document.getElementById('main-svg');
 
             // Funktion zum Abrufen des aktuellen SVG-Elements
             function getCurrentSvg() {
@@ -259,34 +255,28 @@
 
             // Initiale Transformation anwenden
             function applyTransform() {
-                currentSvg = getCurrentSvg();
-                if (currentSvg) {
-                    currentSvg.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+                const svg = getCurrentSvg();
+                if (svg) {
+                    svg.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
                     zoomLevelEl.textContent = Math.round(currentZoom * 100) + '%';
                 }
             }
 
-            // Zoom Funktion - korrigiert für natürliches Verhalten
+            // Zoom Funktion
             function setZoom(newZoom, targetX, targetY) {
                 newZoom = Math.min(maxZoom, Math.max(minZoom, newZoom));
                 
                 if (targetX !== undefined && targetY !== undefined) {
-                    // Zoom zum Mauszeiger - korrigierte Version
                     const rect = container.getBoundingClientRect();
                     const containerCenterX = rect.left + rect.width / 2;
                     const containerCenterY = rect.top + rect.height / 2;
                     
-                    // Position relativ zum Container-Zentrum
                     const relX = targetX - containerCenterX;
                     const relY = targetY - containerCenterY;
                     
-                    // Alte Zoom-Werte speichern
                     const oldZoom = currentZoom;
-                    
-                    // Neue Zoom-Werte setzen
                     currentZoom = newZoom;
                     
-                    // Neue Pan-Position berechnen
                     panX = (panX - relX) * (currentZoom / oldZoom) + relX;
                     panY = (panY - relY) * (currentZoom / oldZoom) + relY;
                 } else {
@@ -321,44 +311,39 @@
 
             // Fit to screen
             zoomFitBtn.addEventListener('click', () => {
-                currentSvg = getCurrentSvg();
-                if (!currentSvg) return;
+                const svg = getCurrentSvg();
+                if (!svg) return;
                 
                 const containerRect = container.getBoundingClientRect();
-                
-                // Berechne verfügbaren Platz (mit etwas Rand)
                 const availableWidth = containerRect.width * 0.85;
                 const availableHeight = containerRect.height * 0.85;
                 
-                // Aktuelle Größe des SVG
-                let svgNaturalWidth = 800;
-                let svgNaturalHeight = 600;
+                // SVG-Größe ermitteln
+                let svgWidth, svgHeight;
                 
-                if (currentSvg.viewBox && currentSvg.viewBox.baseVal) {
-                    svgNaturalWidth = currentSvg.viewBox.baseVal.width || 800;
-                    svgNaturalHeight = currentSvg.viewBox.baseVal.height || 600;
-                } else if (currentSvg.getAttribute('viewBox')) {
-                    const viewBox = currentSvg.getAttribute('viewBox').split(' ');
-                    if (viewBox.length === 4) {
-                        svgNaturalWidth = parseFloat(viewBox[2]);
-                        svgNaturalHeight = parseFloat(viewBox[3]);
-                    }
-                } else if (currentSvg.getBoundingClientRect().width > 0) {
-                    svgNaturalWidth = currentSvg.getBoundingClientRect().width;
-                    svgNaturalHeight = currentSvg.getBoundingClientRect().height;
+                // Versuche viewBox zu lesen
+                if (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width > 0) {
+                    svgWidth = svg.viewBox.baseVal.width;
+                    svgHeight = svg.viewBox.baseVal.height;
+                } else {
+                    // Fallback: getBoundingClientRect
+                    const bounds = svg.getBoundingClientRect();
+                    svgWidth = bounds.width || 800;
+                    svgHeight = bounds.height || 600;
                 }
                 
-                // Berechne Zoom-Faktor
-                const scaleX = availableWidth / svgNaturalWidth;
-                const scaleY = availableHeight / svgNaturalHeight;
-                const fitZoom = Math.min(scaleX, scaleY, 10); // Max 1000% Zoom
+                console.log('SVG Größe:', svgWidth, svgHeight);
+                
+                const scaleX = availableWidth / svgWidth;
+                const scaleY = availableHeight / svgHeight;
+                const fitZoom = Math.min(scaleX, scaleY, 50);
                 
                 panX = 0;
                 panY = 0;
-                setZoom(fitZoom);
+                setZoom(Math.max(fitZoom, 0.1));
             });
 
-            // Scrollrad Zoom - natürliches Verhalten
+            // Scrollrad Zoom
             container.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const delta = e.deltaY < 0 ? 1.1 : 0.9;
@@ -367,13 +352,11 @@
 
             // Pan (Verschieben)
             container.addEventListener('mousedown', (e) => {
-                if (e.target === container || container.contains(e.target)) {
-                    isPanning = true;
-                    startPanX = e.clientX;
-                    startPanY = e.clientY;
-                    container.style.cursor = 'grabbing';
-                    e.preventDefault();
-                }
+                isPanning = true;
+                startPanX = e.clientX;
+                startPanY = e.clientY;
+                container.style.cursor = 'grabbing';
+                e.preventDefault();
             });
 
             window.addEventListener('mousemove', (e) => {
@@ -455,68 +438,89 @@
 
             // SVG Datei laden
             fileInput.addEventListener('change', (e) => {
-                const files = e.target.files;
-                if (!files || files.length === 0) return;
+                const file = e.target.files[0];
+                if (!file) return;
                 
-                const file = files[0];
                 const reader = new FileReader();
                 
                 reader.onload = (event) => {
-                    const svgContent = event.target.result;
-                    
-                    // Temporäres Element erstellen um das SVG zu parsen
-                    const parser = new DOMParser();
-                    const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
-                    
-                    // Prüfen ob es ein SVG ist
-                    if (svgDoc.querySelector('parsererror')) {
-                        alert('Ungültige SVG-Datei');
-                        return;
-                    }
-                    
-                    const newSvg = svgDoc.documentElement;
-                    
-                    if (newSvg.tagName.toLowerCase() === 'svg') {
-                        // Wrapper leeren und neues SVG einfügen
-                        svgWrapper.innerHTML = '';
+                    try {
+                        const svgContent = event.target.result;
+                        console.log('SVG geladen, Länge:', svgContent.length);
                         
-                        // SVG-ID setzen
+                        // Prüfen ob SVG-Inhalt sichtbare Elemente hat
+                        const parser = new DOMParser();
+                        const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+                        
+                        if (svgDoc.querySelector('parsererror')) {
+                            alert('Ungültige SVG-Datei');
+                            return;
+                        }
+                        
+                        const newSvg = svgDoc.documentElement;
+                        
+                        if (newSvg.tagName.toLowerCase() !== 'svg') {
+                            alert('Keine gültige SVG-Datei');
+                            return;
+                        }
+                        
+                        // Altes SVG ersetzen
+                        const oldSvg = getCurrentSvg();
+                        
+                        // ID setzen
                         newSvg.id = 'main-svg';
                         
-                        // Styles für das SVG setzen
-                        newSvg.style.maxWidth = '90%';
-                        newSvg.style.maxHeight = '90%';
+                        // Styles setzen
+                        newSvg.style.maxWidth = 'none';
+                        newSvg.style.maxHeight = 'none';
                         newSvg.style.width = 'auto';
                         newSvg.style.height = 'auto';
+                        newSvg.style.display = 'block';
                         newSvg.style.filter = 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))';
                         newSvg.style.transformOrigin = 'center center';
-                        newSvg.style.transition = 'transform 0.05s ease-out';
                         newSvg.style.willChange = 'transform';
                         newSvg.style.backgroundColor = '#ffffff';
-                        newSvg.style.minWidth = '100px';
-                        newSvg.style.minHeight = '100px';
                         
                         // Sicherstellen, dass viewBox vorhanden ist
                         if (!newSvg.getAttribute('viewBox')) {
-                            // Versuche Breite und Höhe zu ermitteln
-                            let width = newSvg.getAttribute('width');
-                            let height = newSvg.getAttribute('height');
+                            let width = 800;
+                            let height = 600;
                             
-                            if (width && height) {
-                                // Entferne Einheiten
-                                width = parseFloat(width);
-                                height = parseFloat(height);
-                                if (!isNaN(width) && !isNaN(height)) {
-                                    newSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-                                }
-                            }
+                            // Versuche Breite/Höhe aus Attributen zu lesen
+                            const widthAttr = newSvg.getAttribute('width');
+                            const heightAttr = newSvg.getAttribute('height');
+                            
+                            if (widthAttr) width = parseFloat(widthAttr) || 800;
+                            if (heightAttr) height = parseFloat(heightAttr) || 600;
+                            
+                            newSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
                         }
                         
-                        // SVG in den Wrapper einfügen
-                        svgWrapper.appendChild(newSvg);
+                        // Weißen Hintergrund hinzufügen, falls nicht vorhanden
+                        const hasBackground = Array.from(newSvg.children).some(child => {
+                            return child.tagName.toLowerCase() === 'rect' && 
+                                   child.getAttribute('fill') === 'white' &&
+                                   parseFloat(child.getAttribute('width')) > 100;
+                        });
                         
-                        // Referenz aktualisieren
-                        currentSvg = newSvg;
+                        if (!hasBackground) {
+                            const viewBox = newSvg.getAttribute('viewBox').split(' ');
+                            const vbWidth = parseFloat(viewBox[2]) || 800;
+                            const vbHeight = parseFloat(viewBox[3]) || 600;
+                            
+                            const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            background.setAttribute('width', vbWidth);
+                            background.setAttribute('height', vbHeight);
+                            background.setAttribute('fill', 'white');
+                            newSvg.insertBefore(background, newSvg.firstChild);
+                        }
+                        
+                        // SVG ersetzen
+                        if (oldSvg) {
+                            oldSvg.replaceWith(newSvg);
+                        } else {
+                            container.appendChild(newSvg);
+                        }
                         
                         // Reset Ansicht
                         panX = 0;
@@ -527,9 +531,12 @@
                         // Kurze Verzögerung, dann einpassen
                         setTimeout(() => {
                             zoomFitBtn.click();
-                        }, 100);
-                    } else {
-                        alert('Keine gültige SVG-Datei');
+                            console.log('SVG eingepasst, Zoom:', currentZoom);
+                        }, 200);
+                        
+                    } catch (error) {
+                        console.error('Fehler beim Laden:', error);
+                        alert('Fehler beim Laden der SVG-Datei: ' + error.message);
                     }
                 };
                 
@@ -538,7 +545,6 @@
                 };
                 
                 reader.readAsText(file);
-                // Input zurücksetzen für wiederholtes Laden
                 fileInput.value = '';
             });
 
@@ -581,10 +587,11 @@
             // Initial anwenden
             applyTransform();
             
-            // Initial auf Einpassen setzen nach kurzer Verzögerung
+            // Initial auf Einpassen setzen
             setTimeout(() => {
                 zoomFitBtn.click();
-            }, 200);
+                console.log('Initial Zoom:', currentZoom);
+            }, 300);
         })();
     </script>
 </body>
