@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SVG Laser Cutter Viewer – Precision Zoom & Pan</title>
+    <style>
+        :root {
+            --toolbar-position: bottom;
+            --toolbar-offset: 30px;
+            --settings-open: false;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e8e8e8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        #svg-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%),
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #svg-container:active {
+            cursor: grabbing;
+        }
+
+        #main-svg {
+            max-width: 90%;
+            max-height: 90%;
+            width: auto;
+            height: auto;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+            transform-origin: center center;
+            will-change: transform;
+            background-color: #ffffff;
+            display: block;
+        }
+
+        /* IMPORTANT: Make thin lines visible */
+        #main-svg * {
+            vector-effect: non-scaling-stroke;
+        }
+
+        .toolbar {
+            position: fixed;
+            display: flex;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 14px 20px;
+            border-radius: 50px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            z-index: 1000;
+            border: 1px solid rgba(0,0,0,0.1);
+            cursor: move;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: none;
+        }
+
+        .toolbar.dragging {
+            cursor: grabbing;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+            transform: scale(1.05);
+        }
+
+        .toolbar.bottom {
+            bottom: var(--toolbar-offset);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .toolbar.top {
+            top: var(--toolbar-offset);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .toolbar.left {
+            left: var(--toolbar-offset);
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+        }
+
+        .toolbar.right {
+            right: var(--toolbar-offset);
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+        }
+
+        .toolbar button {
+            background: #f0f0f0;
+            border: none;
+            color: #333;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .toolbar button:hover {
+            background: #e0e0e0;
+            transform: scale(1.05);
+        }
+
+        .toolbar button:active {
+            transform: scale(0.95);
+        }
+
+        .zoom-indicator {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            z-index: 999;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .zoom-indicator.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .zoom-indicator span {
+            color: #0066cc;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .file-upload {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid #ddd;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .file-upload:hover {
+            background: #f8f8f8;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload svg {
+            width: 20px;
+            height: 20px;
+            fill: #333;
+        }
+
+        .settings-btn {
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 10px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 48px;
+            height: 48px;
+        }
+
+        .settings-btn:hover {
+            background: #f8f8f8;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transform: rotate(90deg);
+        }
+
+        .settings-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: #333;
+            stroke-width: 2;
+        }
+
+        .help-btn {
+            position: fixed;
+            top: 80px;
+            left: 25px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 10px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 48px;
+            height: 48px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .help-btn:hover {
+            background: #f8f8f8;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transform: scale(1.1);
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 25px;
+            left: 85px;
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            min-width: 250px;
+            transform: translateX(-20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .settings-panel.open {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .settings-panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 10px;
+        }
+
+        .setting-label {
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #0066cc;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+
+        .help-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            z-index: 2000;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(8px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .help-modal.open {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .help-modal h2 {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .help-modal ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .help-modal li {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .help-modal .key-icon {
+            display: inline-block;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .help-modal .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+
+        .help-modal .close-btn:hover {
+            color: #333;
+        }
+
+        .help-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .help-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+    </style>
+</head>
+<body>
+    <div class="zoom-indicator" id="zoom-indicator">
+        Zoom: <span id="zoom-level">100%</span>
+    </div>
+
+    <button class="settings-btn" id="settings-btn" title="Settings">
+        <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+    </button>
+
+    <button class="help-btn" id="help-btn" title="Help">?</button>
+
+    <div class="settings-panel" id="settings-panel">
+        <h3>Settings</h3>
+        <div class="setting-item">
+            <span class="setting-label">Thicken thin lines</span>
+            <div class="toggle-switch active" id="toggle-thicken"></div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Show zoom indicator</span>
+            <div class="toggle-switch active" id="toggle-zoom-indicator"></div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Show grid background</span>
+            <div class="toggle-switch active" id="toggle-grid"></div>
+        </div>
+    </div>
+
+    <label class="file-upload" title="Open SVG file">
+        <svg viewBox="0 0 24 24">
+            <path d="M19 13v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6M12 3v12m0-12 4 4m-4-4-4 4" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Load SVG
+        <input type="file" id="svg-file-input" accept=".svg">
+    </label>
+
+    <div id="svg-container">
+        <svg id="main-svg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" style="width: 800px; height: 600px;">
+            <rect width="800" height="600" fill="white"/>
+            <rect x="10" y="10" width="780" height="580" fill="none" stroke="#000000" stroke-width="2"/>
+            <line x1="20" y1="300" x2="780" y2="300" stroke="#000000" stroke-width="0.5"/>
+            <line x1="400" y1="20" x2="400" y2="580" stroke="#000000" stroke-width="0.5"/>
+            <line x1="20" y1="20" x2="780" y2="580" stroke="#ff0000" stroke-width="0.5"/>
+            <line x1="780" y1="20" x2="20" y2="580" stroke="#ff0000" stroke-width="0.5"/>
+            <circle cx="400" cy="300" r="180" fill="none" stroke="#0000ff" stroke-width="0.5"/>
+            <circle cx="400" cy="300" r="100" fill="none" stroke="#0000ff" stroke-width="0.5" stroke-dasharray="10,5"/>
+            <rect x="150" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
+            <rect x="570" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
+            <rect x="150" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
+            <rect x="570" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
+            <polygon points="300,200 500,200 550,350 250,350" fill="none" stroke="#ff6600" stroke-width="0.5"/>
+            <text x="400" y="500" font-family="Arial" font-size="30" fill="#333333" text-anchor="middle" dominant-baseline="middle">LASER</text>
+            <path d="M100,450 L200,450 L150,500 Z" fill="none" stroke="#6600cc" stroke-width="0.3"/>
+            <path d="M700,450 L600,450 L650,500 Z" fill="none" stroke="#6600cc" stroke-width="0.3"/>
+        </svg>
+    </div>
+
+    <div class="toolbar bottom" id="toolbar">
+        <button id="zoom-in" title="Zoom In">+</button>
+        <button id="zoom-out" title="Zoom Out">−</button>
+        <button id="zoom-reset" title="Reset Zoom">⟲</button>
+        <button id="zoom-fit" title="Fit to Screen">⤢</button>
+    </div>
+
+    <div class="help-overlay" id="help-overlay"></div>
+    <div class="help-modal" id="help-modal">
+        <button class="close-btn" id="help-close">&times;</button>
+        <h2>How to Use</h2>
+        <ul>
+            <li><span class="key-icon">🖱️</span> Drag to pan around</li>
+            <li><span class="key-icon">🖱️</span> Scroll wheel to zoom</li>
+            <li><span class="key-icon">+</span> / <span class="key-icon">-</span> Zoom in/out</li>
+            <li><span class="key-icon">0</span> Reset zoom</li>
+            <li><span class="key-icon">F</span> Fit to screen</li>
+            <li><span class="key-icon">T</span> Toggle line thickening</li>
+            <li><span class="key-icon">←→↑↓</span> Pan with arrow keys</li>
+            <li><span class="key-icon">📁</span> Load your own SVG files</li>
+            <li><span class="key-icon">⚙️</span> Open settings panel</li>
+        </ul>
+    </div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('svg-container');
+            const zoomLevelEl = document.getElementById('zoom-level');
+            const zoomIndicator = document.getElementById('zoom-indicator');
+            const zoomInBtn = document.getElementById('zoom-in');
+            const zoomOutBtn = document.getElementById('zoom-out');
+            const zoomResetBtn = document.getElementById('zoom-reset');
+            const zoomFitBtn = document.getElementById('zoom-fit');
+            const fileInput = document.getElementById('svg-file-input');
+            const toolbar = document.getElementById('toolbar');
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsPanel = document.getElementById('settings-panel');
+            const helpBtn = document.getElementById('help-btn');
+            const helpModal = document.getElementById('help-modal');
+            const helpOverlay = document.getElementById('help-overlay');
+            const helpClose = document.getElementById('help-close');
+            const toggleThicken = document.getElementById('toggle-thicken');
+            const toggleZoomIndicator = document.getElementById('toggle-zoom-indicator');
+            const toggleGrid = document.getElementById('toggle-grid');
+
+            let currentZoom = 1;
+            let minZoom = 0.01;
+            let maxZoom = 100;
+            let panX = 0;
+            let panY = 0;
+            let startPanX = 0;
+            let startPanY = 0;
+            let isPanning = false;
+            let thickLinesEnabled = true;
+            let settingsOpen = false;
+            let helpOpen = false;
+
+            // Toolbar dragging
+            let isDraggingToolbar = false;
+            let toolbarDragStartX = 0;
+            let toolbarDragStartY = 0;
+            let toolbarStartLeft = 0;
+            let toolbarStartTop = 0;
+
+            function getCurrentSvg() {
+                return document.getElementById('main-svg');
+            }
+
+            function applyLineThickness() {
+                const svg = getCurrentSvg();
+                if (!svg) return;
+                
+                const lineElements = svg.querySelectorAll('path, line, polyline, polygon, rect, circle, ellipse');
+                
+                lineElements.forEach(element => {
+                    if (thickLinesEnabled) {
+                        if (!element.dataset.originalStrokeWidth) {
+                            element.dataset.originalStrokeWidth = element.getAttribute('stroke-width') || '1';
+                        }
+                        
+                        const originalWidth = parseFloat(element.dataset.originalStrokeWidth);
+                        
+                        if (originalWidth < 1.5) {
+                            element.setAttribute('stroke-width', '2');
+                        }
+                    } else {
+                        if (element.dataset.originalStrokeWidth) {
+                            element.setAttribute('stroke-width', element.dataset.originalStrokeWidth);
+                        }
+                    }
+                });
+            }
+
+            function applyTransform() {
+                const svg = getCurrentSvg();
+                if (svg) {
+                    svg.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+                    zoomLevelEl.textContent = Math.round(currentZoom * 100) + '%';
+                }
+            }
+
+            function setZoom(newZoom, targetX, targetY) {
+                newZoom = Math.min(maxZoom, Math.max(minZoom, newZoom));
+                
+                if (targetX !== undefined && targetY !== undefined) {
+                    const rect = container.getBoundingClientRect();
+                    const containerCenterX = rect.left + rect.width / 2;
+                    const containerCenterY = rect.top + rect.height / 2;
+                    
+                    const relX = targetX - containerCenterX;
+                    const relY = targetY - containerCenterY;
+                    
+                    const oldZoom = currentZoom;
+                    currentZoom = newZoom;
+                    
+                    panX = (panX - relX) * (currentZoom / oldZoom) + relX;
+                    panY = (panY - relY) * (currentZoom / oldZoom) + relY;
+                } else {
+                    currentZoom = newZoom;
+                }
+                
+                applyTransform();
+            }
+
+            // Settings panel
+            settingsBtn.addEventListener('click', () => {
+                settingsOpen = !settingsOpen;
+                settingsPanel.classList.toggle('open', settingsOpen);
+            });
+
+            // Help modal
+            helpBtn.addEventListener('click', () => {
+                helpOpen = true;
+                helpModal.classList.add('open');
+                helpOverlay.classList.add('open');
+            });
+
+            helpClose.addEventListener('click', () => {
+                helpOpen = false;
+                helpModal.classList.remove('open');
+                helpOverlay.classList.remove('open');
+            });
+
+            helpOverlay.addEventListener('click', () => {
+                helpOpen = false;
+                helpModal.classList.remove('open');
+                helpOverlay.classList.remove('open');
+            });
+
+            // Toggle switches
+            toggleThicken.addEventListener('click', () => {
+                thickLinesEnabled = !thickLinesEnabled;
+                toggleThicken.classList.toggle('active', thickLinesEnabled);
+                applyLineThickness();
+            });
+
+            toggleZoomIndicator.addEventListener('click', () => {
+                const isActive = toggleZoomIndicator.classList.toggle('active');
+                zoomIndicator.classList.toggle('hidden', !isActive);
+            });
+
+            toggleGrid.addEventListener('click', () => {
+                const isActive = toggleGrid.classList.toggle('active');
+                if (isActive) {
+                    container.style.backgroundImage = 
+                        'linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%), linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%)';
+                } else {
+                    container.style.backgroundImage = 'none';
+                    container.style.backgroundColor = '#ffffff';
+                }
+            });
+
+            // Toolbar dragging
+            toolbar.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                
+                isDraggingToolbar = true;
+                toolbarDragStartX = e.clientX;
+                toolbarDragStartY = e.clientY;
+                
+                const rect = toolbar.getBoundingClientRect();
+                toolbarStartLeft = rect.left;
+                toolbarStartTop = rect.top;
+                
+                toolbar.classList.add('dragging');
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isDraggingToolbar) {
+                    const dx = e.clientX - toolbarDragStartX;
+                    const dy = e.clientY - toolbarDragStartY;
+                    
+                    const newLeft = toolbarStartLeft + dx;
+                    const newTop = toolbarStartTop + dy;
+                    
+                    // Determine nearest edge
+                    const windowWidth = window.innerWidth;
+                    const windowHeight = window.innerHeight;
+                    const toolbarRect = toolbar.getBoundingClientRect();
+                    
+                    // Remove all position classes
+                    toolbar.classList.remove('bottom', 'top', 'left', 'right');
+                    
+                    // Set fixed positioning
+                    toolbar.style.position = 'fixed';
+                    toolbar.style.left = newLeft + 'px';
+                    toolbar.style.top = newTop + 'px';
+                    toolbar.style.bottom = 'auto';
+                    toolbar.style.right = 'auto';
+                    toolbar.style.transform = 'none';
+                    
+                    // Check if near edges and snap
+                    const snapThreshold = 50;
+                    
+                    if (newTop < snapThreshold) {
+                        toolbar.classList.add('top');
+                        toolbar.style.left = '50%';
+                        toolbar.style.top = 'auto';
+                        toolbar.style.transform = 'translateX(-50%)';
+                        toolbar.style.flexDirection = 'row';
+                    } else if (newTop + toolbarRect.height > windowHeight - snapThreshold) {
+                        toolbar.classList.add('bottom');
+                        toolbar.style.left = '50%';
+                        toolbar.style.top = 'auto';
+                        toolbar.style.transform = 'translateX(-50%)';
+                        toolbar.style.flexDirection = 'row';
+                    } else if (newLeft < snapThreshold) {
+                        toolbar.classList.add('left');
+                        toolbar.style.left = 'auto';
+                        toolbar.style.top = '50%';
+                        toolbar.style.transform = 'translateY(-50%)';
+                        toolbar.style.flexDirection = 'column';
+                    } else if (newLeft + toolbarRect.width > windowWidth - snapThreshold) {
+                        toolbar.classList.add('right');
+                        toolbar.style.left = 'auto';
+                        toolbar.style.top = '50%';
+                        toolbar.style.transform = 'translateY(-50%)';
+                        toolbar.style.flexDirection = 'column';
+                    }
+                } else if (isPanning) {
+                    const dx = e.clientX - startPanX;
+                    const dy = e.clientY - startPanY;
+                    panX += dx;
+                    panY += dy;
+                    startPanX = e.clientX;
+                    startPanY = e.clientY;
+                    applyTransform();
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDraggingToolbar) {
+                    isDraggingToolbar = false;
+                    toolbar.classList.remove('dragging');
+                }
+                if (isPanning) {
+                    isPanning = false;
+                    container.style.cursor = 'grab';
+                }
+            });
+
+            // Zoom buttons
+            zoomInBtn.addEventListener('click', () => {
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                setZoom(currentZoom * 1.5, centerX, centerY);
+            });
+
+            zoomOutBtn.addEventListener('click', () => {
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                setZoom(currentZoom / 1.5, centerX, centerY);
+            });
+
+            zoomResetBtn.addEventListener('click', () => {
+                panX = 0;
+                panY = 0;
+                setZoom(1);
+            });
+
+            zoomFitBtn.addEventListener('click', () => {
+                const svg = getCurrentSvg();
+                if (!svg) return;
+                
+                const containerRect = container.getBoundingClientRect();
+                const availableWidth = containerRect.width * 0.85;
+                const availableHeight = containerRect.height * 0.85;
+                
+                let svgWidth, svgHeight;
+                
+                if (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width > 0) {
+                    svgWidth = svg.viewBox.baseVal.width;
+                    svgHeight = svg.viewBox.baseVal.height;
+                } else {
+                    const bounds = svg.getBoundingClientRect();
+                    svgWidth = bounds.width || 800;
+                    svgHeight = bounds.height || 600;
+                }
+                
+                const scaleX = availableWidth / svgWidth;
+                const scaleY = availableHeight / svgHeight;
+                const fitZoom = Math.min(scaleX, scaleY, 50);
+                
+                panX = 0;
+                panY = 0;
+                setZoom(Math.max(fitZoom, 0.1));
+            });
+
+            // Scroll wheel zoom
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 1.1 : 0.9;
+                setZoom(currentZoom * delta, e.clientX, e.clientY);
+            }, { passive: false });
+
+            // Pan
+            container.addEventListener('mousedown', (e) => {
+                isPanning = true;
+                startPanX = e.clientX;
+                startPanY = e.clientY;
+                container.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            // Touch support
+            let lastTouchDistance = 0;
+            let lastTouchCenter = { x: 0, y: 0 };
+            let touchStartPanX = 0;
+            let touchStartPanY = 0;
+            let touchStartZoom = 1;
+
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isPanning = true;
+                    startPanX = e.touches[0].clientX;
+                    startPanY = e.touches[0].clientY;
+                    touchStartPanX = panX;
+                    touchStartPanY = panY;
+                } else if (e.touches.length === 2) {
+                    isPanning = false;
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+                    lastTouchCenter = {
+                        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+                    };
+                    touchStartZoom = currentZoom;
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            container.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isPanning) {
+                    const dx = e.touches[0].clientX - startPanX;
+                    const dy = e.touches[0].clientY - startPanY;
+                    panX = touchStartPanX + dx;
+                    panY = touchStartPanY + dy;
+                    applyTransform();
+                } else if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const newDistance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (lastTouchDistance > 0) {
+                        const scale = newDistance / lastTouchDistance;
+                        const newZoom = touchStartZoom * scale;
+                        setZoom(newZoom, lastTouchCenter.x, lastTouchCenter.y);
+                    }
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            container.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    lastTouchDistance = 0;
+                }
+                if (e.touches.length === 0) {
+                    isPanning = false;
+                }
+            });
+
+            // Load SVG file
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    try {
+                        const svgContent = event.target.result;
+                        
+                        const parser = new DOMParser();
+                        const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+                        
+                        if (svgDoc.querySelector('parsererror')) {
+                            alert('Invalid SVG file');
+                            return;
+                        }
+                        
+                        const newSvg = svgDoc.documentElement;
+                        
+                        if (newSvg.tagName.toLowerCase() !== 'svg') {
+                            alert('Not a valid SVG file');
+                            return;
+                        }
+                        
+                        const oldSvg = getCurrentSvg();
+                        
+                        newSvg.id = 'main-svg';
+                        
+                        newSvg.style.maxWidth = 'none';
+                        newSvg.style.maxHeight = 'none';
+                        newSvg.style.width = 'auto';
+                        newSvg.style.height = 'auto';
+                        newSvg.style.display = 'block';
+                        newSvg.style.filter = 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))';
+                        newSvg.style.transformOrigin = 'center center';
+                        newSvg.style.willChange = 'transform';
+                        newSvg.style.backgroundColor = '#ffffff';
+                        
+                        if (!newSvg.getAttribute('viewBox')) {
+                            let width = 800;
+                            let height = 600;
+                            
+                            const widthAttr = newSvg.getAttribute('width');
+                            const heightAttr = newSvg.getAttribute('height');
+                            
+                            if (widthAttr) width = parseFloat(widthAttr) || 800;
+                            if (heightAttr) height = parseFloat(heightAttr) || 600;
+                            
+                            newSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                        }
+                        
+                        const hasBackground = Array.from(newSvg.children).some(child => {
+                            return child.tagName.toLowerCase() === 'rect' && 
+                                   child.getAttribute('fill') === 'white' &&
+                                   parseFloat(child.getAttribute('width')) > 100;
+                        });
+                        
+                        if (!hasBackground) {
+                            const viewBox = newSvg.getAttribute('viewBox').split(' ');
+                            const vbWidth = parseFloat(viewBox[2]) || 800;
+                            const vbHeight = parseFloat(viewBox[3]) || 600;
+                            
+                            const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            background.setAttribute('width', vbWidth);
+                            background.setAttribute('height', vbHeight);
+                            background.setAttribute('fill', 'white');
+                            newSvg.insertBefore(background, newSvg.firstChild);
+                        }
+                        
+                        if (oldSvg) {
+                            oldSvg.replaceWith(newSvg);
+                        } else {
+                            container.appendChild(newSvg);
+                        }
+                        
+                        applyLineThickness();
+                        
+                        panX = 0;
+                        panY = 0;
+                        currentZoom = 1;
+                        applyTransform();
+                        
+                        setTimeout(() => {
+                            zoomFitBtn.click();
+                        }, 200);
+                        
+                    } catch (error) {
+                        console.error('Error loading file:', error);
+                        alert('Error loading SVG file: ' + error.message);
+                    }
+                };
+                
+                reader.onerror = () => {
+                    alert('Error reading file');
+                };
+                
+                reader.readAsText(file);
+                fileInput.value = '';
+            });
+
+            // Keyboard controls
+            window.addEventListener('keydown', (e) => {
+                switch(e.key) {
+                    case '+':
+                    case '=':
+                        zoomInBtn.click();
+                        break;
+                    case '-':
+                        zoomOutBtn.click();
+                        break;
+                    case '0':
+                        zoomResetBtn.click();
+                        break;
+                    case 'f':
+                    case 'F':
+                        zoomFitBtn.click();
+                        break;
+                    case 't':
+                    case 'T':
+                        toggleThicken.click();
+                        break;
+                    case 'Escape':
+                        if (helpOpen) {
+                            helpClose.click();
+                        }
+                        if (settingsOpen) {
+                            settingsBtn.click();
+                        }
+                        break;
+                    case 'ArrowLeft':
+                        panX -= 50;
+                        applyTransform();
+                        break;
+                    case 'ArrowRight':
+                        panX += 50;
+                        applyTransform();
+                        break;
+                    case 'ArrowUp':
+                        panY -= 50;
+                        applyTransform();
+                        break;
+                    case 'ArrowDown':
+                        panY += 50;
+                        applyTransform();
+                        break;
+                }
+            });
+
+            // Initialize
+            applyTransform();
+            applyLineThickness();
+            
+            setTimeout(() => {
+                zoomFitBtn.click();
+            }, 300);
+        })();
+    </script>
+</body>
+</html>
