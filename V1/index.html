@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SVG Laser Cutter Viewer – Präziser Zoom & Pan</title>
+    <title>SVG Laser Cutter Viewer – Precision Zoom & Pan</title>
     <style>
         body {
             margin: 0;
@@ -50,6 +50,72 @@
             will-change: transform;
             background-color: #ffffff;
             display: block;
+        }
+
+        /* IMPORTANT: Make thin lines visible */
+        #main-svg * {
+            vector-effect: non-scaling-stroke;
+        }
+
+        /* Thicken all lines and paths */
+        #main-svg path:not([stroke-width]),
+        #main-svg line:not([stroke-width]),
+        #main-svg polyline:not([stroke-width]),
+        #main-svg polygon:not([stroke-width]),
+        #main-svg rect:not([stroke-width]),
+        #main-svg circle:not([stroke-width]),
+        #main-svg ellipse:not([stroke-width]) {
+            stroke-width: 2px;
+        }
+
+        /* Thicken existing thin lines */
+        #main-svg path[stroke-width="0.5"],
+        #main-svg line[stroke-width="0.5"],
+        #main-svg polyline[stroke-width="0.5"],
+        #main-svg polygon[stroke-width="0.5"],
+        #main-svg rect[stroke-width="0.5"],
+        #main-svg circle[stroke-width="0.5"],
+        #main-svg ellipse[stroke-width="0.5"],
+        #main-svg path[stroke-width="1"],
+        #main-svg line[stroke-width="1"],
+        #main-svg polyline[stroke-width="1"],
+        #main-svg polygon[stroke-width="1"],
+        #main-svg rect[stroke-width="1"],
+        #main-svg circle[stroke-width="1"],
+        #main-svg ellipse[stroke-width="1"] {
+            stroke-width: 2px;
+        }
+
+        /* Even thinner lines */
+        #main-svg path[stroke-width="0.1"],
+        #main-svg line[stroke-width="0.1"],
+        #main-svg polyline[stroke-width="0.1"],
+        #main-svg polygon[stroke-width="0.1"],
+        #main-svg rect[stroke-width="0.1"],
+        #main-svg circle[stroke-width="0.1"],
+        #main-svg ellipse[stroke-width="0.1"],
+        #main-svg path[stroke-width="0.2"],
+        #main-svg line[stroke-width="0.2"],
+        #main-svg polyline[stroke-width="0.2"],
+        #main-svg polygon[stroke-width="0.2"],
+        #main-svg rect[stroke-width="0.2"],
+        #main-svg circle[stroke-width="0.2"],
+        #main-svg ellipse[stroke-width="0.2"],
+        #main-svg path[stroke-width="0.3"],
+        #main-svg line[stroke-width="0.3"],
+        #main-svg polyline[stroke-width="0.3"],
+        #main-svg polygon[stroke-width="0.3"],
+        #main-svg rect[stroke-width="0.3"],
+        #main-svg circle[stroke-width="0.3"],
+        #main-svg ellipse[stroke-width="0.3"],
+        #main-svg path[stroke-width="0.4"],
+        #main-svg line[stroke-width="0.4"],
+        #main-svg polyline[stroke-width="0.4"],
+        #main-svg polygon[stroke-width="0.4"],
+        #main-svg rect[stroke-width="0.4"],
+        #main-svg circle[stroke-width="0.4"],
+        #main-svg ellipse[stroke-width="0.4"] {
+            stroke-width: 2.5px;
         }
 
         .toolbar {
@@ -164,6 +230,37 @@
             pointer-events: none;
             text-align: center;
         }
+
+        .line-thickness-toggle {
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid #ddd;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .line-thickness-toggle:hover {
+            background: #f8f8f8;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .line-thickness-toggle.active {
+            background: #0066cc;
+            color: white;
+            border-color: #0052a3;
+        }
     </style>
 </head>
 <body>
@@ -171,62 +268,70 @@
         Zoom: <span id="zoom-level">100%</span>
     </div>
 
-    <label class="file-upload" title="SVG-Datei öffnen">
+    <button class="line-thickness-toggle active" id="thickness-toggle" title="Toggle line thickening">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="2" y1="12" x2="22" y2="12" stroke-width="4"/>
+            <line x1="2" y1="12" x2="22" y2="12" stroke-width="1"/>
+        </svg>
+        Thicken lines: ON
+    </button>
+
+    <label class="file-upload" title="Open SVG file">
         <svg viewBox="0 0 24 24">
             <path d="M19 13v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6M12 3v12m0-12 4 4m-4-4-4 4" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        SVG laden
+        Load SVG
         <input type="file" id="svg-file-input" accept=".svg">
     </label>
 
     <div id="svg-container">
-        <!-- Standard Demo-SVG mit typischen Laser-Linien in Originalfarben -->
+        <!-- Default demo SVG with typical laser cutting lines in original colors -->
         <svg id="main-svg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" style="width: 800px; height: 600px;">
-            <!-- Weißer Hintergrund -->
+            <!-- White background -->
             <rect width="800" height="600" fill="white"/>
             
-            <!-- Hintergrund Kontur in Schwarz -->
+            <!-- Background outline in black -->
             <rect x="10" y="10" width="780" height="580" fill="none" stroke="#000000" stroke-width="2"/>
             
-            <!-- Linien in verschiedenen Farben (wie typisch für Lasercutting) -->
-            <line x1="20" y1="300" x2="780" y2="300" stroke="#000000" stroke-width="1"/>
-            <line x1="400" y1="20" x2="400" y2="580" stroke="#000000" stroke-width="1"/>
+            <!-- Lines in various colors (typical for laser cutting) -->
+            <line x1="20" y1="300" x2="780" y2="300" stroke="#000000" stroke-width="0.5"/>
+            <line x1="400" y1="20" x2="400" y2="580" stroke="#000000" stroke-width="0.5"/>
             
-            <!-- Diagonalen in Rot für Schnittlinien -->
-            <line x1="20" y1="20" x2="780" y2="580" stroke="#ff0000" stroke-width="1"/>
-            <line x1="780" y1="20" x2="20" y2="580" stroke="#ff0000" stroke-width="1"/>
+            <!-- Diagonals in red for cutting lines -->
+            <line x1="20" y1="20" x2="780" y2="580" stroke="#ff0000" stroke-width="0.5"/>
+            <line x1="780" y1="20" x2="20" y2="580" stroke="#ff0000" stroke-width="0.5"/>
             
-            <!-- Kreise in Blau für Gravur -->
-            <circle cx="400" cy="300" r="180" fill="none" stroke="#0000ff" stroke-width="1"/>
-            <circle cx="400" cy="300" r="100" fill="none" stroke="#0000ff" stroke-width="1" stroke-dasharray="10,5"/>
+            <!-- Circles in blue for engraving -->
+            <circle cx="400" cy="300" r="180" fill="none" stroke="#0000ff" stroke-width="0.5"/>
+            <circle cx="400" cy="300" r="100" fill="none" stroke="#0000ff" stroke-width="0.5" stroke-dasharray="10,5"/>
             
-            <!-- Rechtecke in Grün -->
-            <rect x="150" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
-            <rect x="570" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
-            <rect x="150" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
-            <rect x="570" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="1.5"/>
+            <!-- Rectangles in green -->
+            <rect x="150" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
+            <rect x="570" y="100" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
+            <rect x="150" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
+            <rect x="570" y="420" width="80" height="80" fill="none" stroke="#00aa00" stroke-width="0.5"/>
             
-            <!-- Polygon in Orange -->
-            <polygon points="300,200 500,200 550,350 250,350" fill="none" stroke="#ff6600" stroke-width="1.5"/>
+            <!-- Polygon in orange -->
+            <polygon points="300,200 500,200 550,350 250,350" fill="none" stroke="#ff6600" stroke-width="0.5"/>
             
-            <!-- Text Beispiel (für Gravur) in Dunkelgrau -->
+            <!-- Text example (for engraving) in dark gray -->
             <text x="400" y="500" font-family="Arial" font-size="30" fill="#333333" text-anchor="middle" dominant-baseline="middle">LASER</text>
             
-            <!-- Feine Muster in Lila -->
-            <path d="M100,450 L200,450 L150,500 Z" fill="none" stroke="#6600cc" stroke-width="1"/>
-            <path d="M700,450 L600,450 L650,500 Z" fill="none" stroke="#6600cc" stroke-width="1"/>
+            <!-- Fine patterns in purple -->
+            <path d="M100,450 L200,450 L150,500 Z" fill="none" stroke="#6600cc" stroke-width="0.3"/>
+            <path d="M700,450 L600,450 L650,500 Z" fill="none" stroke="#6600cc" stroke-width="0.3"/>
         </svg>
     </div>
 
     <div class="toolbar">
-        <button id="zoom-in" title="Vergrößern (Zoom In)">+</button>
-        <button id="zoom-out" title="Verkleinern (Zoom Out)">−</button>
-        <button id="zoom-reset" title="Zoom zurücksetzen">⟲</button>
-        <button id="zoom-fit" title="Einpassen (Fit to screen)">⤢</button>
+        <button id="zoom-in" title="Zoom In">+</button>
+        <button id="zoom-out" title="Zoom Out">−</button>
+        <button id="zoom-reset" title="Reset Zoom">⟲</button>
+        <button id="zoom-fit" title="Fit to Screen">⤢</button>
     </div>
 
     <div class="hint">
-        🖱️ Ziehen zum Verschieben · Scrollrad zum Zoomen · Buttons für präzise Steuerung
+        🖱️ Drag to pan · Scroll wheel to zoom · Toggle for line thickening
     </div>
 
     <script>
@@ -238,6 +343,7 @@
             const zoomResetBtn = document.getElementById('zoom-reset');
             const zoomFitBtn = document.getElementById('zoom-fit');
             const fileInput = document.getElementById('svg-file-input');
+            const thicknessToggle = document.getElementById('thickness-toggle');
 
             let currentZoom = 1;
             let minZoom = 0.01;
@@ -247,13 +353,69 @@
             let startPanX = 0;
             let startPanY = 0;
             let isPanning = false;
+            let thickLinesEnabled = true;
 
-            // Funktion zum Abrufen des aktuellen SVG-Elements
+            // Function to get current SVG element
             function getCurrentSvg() {
                 return document.getElementById('main-svg');
             }
 
-            // Initiale Transformation anwenden
+            // Function to thicken lines
+            function applyLineThickness() {
+                const svg = getCurrentSvg();
+                if (!svg) return;
+                
+                const lineElements = svg.querySelectorAll('path, line, polyline, polygon, rect, circle, ellipse');
+                
+                lineElements.forEach(element => {
+                    if (thickLinesEnabled) {
+                        // Store original stroke width if not already stored
+                        if (!element.dataset.originalStrokeWidth) {
+                            element.dataset.originalStrokeWidth = element.getAttribute('stroke-width') || '1';
+                        }
+                        
+                        const originalWidth = parseFloat(element.dataset.originalStrokeWidth);
+                        
+                        // Only thicken thin lines
+                        if (originalWidth < 1.5) {
+                            element.setAttribute('stroke-width', '2');
+                        }
+                    } else {
+                        // Reset to original
+                        if (element.dataset.originalStrokeWidth) {
+                            element.setAttribute('stroke-width', element.dataset.originalStrokeWidth);
+                        }
+                    }
+                });
+            }
+
+            // Toggle line thickening
+            thicknessToggle.addEventListener('click', () => {
+                thickLinesEnabled = !thickLinesEnabled;
+                
+                if (thickLinesEnabled) {
+                    thicknessToggle.classList.add('active');
+                    thicknessToggle.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="2" y1="12" x2="22" y2="12" stroke-width="4"/>
+                            <line x1="2" y1="12" x2="22" y2="12" stroke-width="1"/>
+                        </svg>
+                        Thicken lines: ON
+                    `;
+                } else {
+                    thicknessToggle.classList.remove('active');
+                    thicknessToggle.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="2" y1="12" x2="22" y2="12" stroke-width="1"/>
+                        </svg>
+                        Thicken lines: OFF
+                    `;
+                }
+                
+                applyLineThickness();
+            });
+
+            // Apply initial transformation
             function applyTransform() {
                 const svg = getCurrentSvg();
                 if (svg) {
@@ -262,7 +424,7 @@
                 }
             }
 
-            // Zoom Funktion
+            // Zoom function
             function setZoom(newZoom, targetX, targetY) {
                 newZoom = Math.min(maxZoom, Math.max(minZoom, newZoom));
                 
@@ -286,7 +448,7 @@
                 applyTransform();
             }
 
-            // Zoom In Button
+            // Zoom In button
             zoomInBtn.addEventListener('click', () => {
                 const rect = container.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
@@ -294,7 +456,7 @@
                 setZoom(currentZoom * 1.5, centerX, centerY);
             });
 
-            // Zoom Out Button
+            // Zoom Out button
             zoomOutBtn.addEventListener('click', () => {
                 const rect = container.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
@@ -318,21 +480,16 @@
                 const availableWidth = containerRect.width * 0.85;
                 const availableHeight = containerRect.height * 0.85;
                 
-                // SVG-Größe ermitteln
                 let svgWidth, svgHeight;
                 
-                // Versuche viewBox zu lesen
                 if (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width > 0) {
                     svgWidth = svg.viewBox.baseVal.width;
                     svgHeight = svg.viewBox.baseVal.height;
                 } else {
-                    // Fallback: getBoundingClientRect
                     const bounds = svg.getBoundingClientRect();
                     svgWidth = bounds.width || 800;
                     svgHeight = bounds.height || 600;
                 }
-                
-                console.log('SVG Größe:', svgWidth, svgHeight);
                 
                 const scaleX = availableWidth / svgWidth;
                 const scaleY = availableHeight / svgHeight;
@@ -343,14 +500,14 @@
                 setZoom(Math.max(fitZoom, 0.1));
             });
 
-            // Scrollrad Zoom
+            // Scroll wheel zoom
             container.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const delta = e.deltaY < 0 ? 1.1 : 0.9;
                 setZoom(currentZoom * delta, e.clientX, e.clientY);
             }, { passive: false });
 
-            // Pan (Verschieben)
+            // Pan (dragging)
             container.addEventListener('mousedown', (e) => {
                 isPanning = true;
                 startPanX = e.clientX;
@@ -378,7 +535,7 @@
                 }
             });
 
-            // Touch Unterstützung
+            // Touch support
             let lastTouchDistance = 0;
             let lastTouchCenter = { x: 0, y: 0 };
             let touchStartPanX = 0;
@@ -436,7 +593,7 @@
                 }
             });
 
-            // SVG Datei laden
+            // Load SVG file
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -446,31 +603,26 @@
                 reader.onload = (event) => {
                     try {
                         const svgContent = event.target.result;
-                        console.log('SVG geladen, Länge:', svgContent.length);
                         
-                        // Prüfen ob SVG-Inhalt sichtbare Elemente hat
                         const parser = new DOMParser();
                         const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
                         
                         if (svgDoc.querySelector('parsererror')) {
-                            alert('Ungültige SVG-Datei');
+                            alert('Invalid SVG file');
                             return;
                         }
                         
                         const newSvg = svgDoc.documentElement;
                         
                         if (newSvg.tagName.toLowerCase() !== 'svg') {
-                            alert('Keine gültige SVG-Datei');
+                            alert('Not a valid SVG file');
                             return;
                         }
                         
-                        // Altes SVG ersetzen
                         const oldSvg = getCurrentSvg();
                         
-                        // ID setzen
                         newSvg.id = 'main-svg';
                         
-                        // Styles setzen
                         newSvg.style.maxWidth = 'none';
                         newSvg.style.maxHeight = 'none';
                         newSvg.style.width = 'auto';
@@ -481,12 +633,10 @@
                         newSvg.style.willChange = 'transform';
                         newSvg.style.backgroundColor = '#ffffff';
                         
-                        // Sicherstellen, dass viewBox vorhanden ist
                         if (!newSvg.getAttribute('viewBox')) {
                             let width = 800;
                             let height = 600;
                             
-                            // Versuche Breite/Höhe aus Attributen zu lesen
                             const widthAttr = newSvg.getAttribute('width');
                             const heightAttr = newSvg.getAttribute('height');
                             
@@ -496,7 +646,6 @@
                             newSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
                         }
                         
-                        // Weißen Hintergrund hinzufügen, falls nicht vorhanden
                         const hasBackground = Array.from(newSvg.children).some(child => {
                             return child.tagName.toLowerCase() === 'rect' && 
                                    child.getAttribute('fill') === 'white' &&
@@ -515,40 +664,39 @@
                             newSvg.insertBefore(background, newSvg.firstChild);
                         }
                         
-                        // SVG ersetzen
                         if (oldSvg) {
                             oldSvg.replaceWith(newSvg);
                         } else {
                             container.appendChild(newSvg);
                         }
                         
-                        // Reset Ansicht
+                        // Apply line thickening
+                        applyLineThickness();
+                        
                         panX = 0;
                         panY = 0;
                         currentZoom = 1;
                         applyTransform();
                         
-                        // Kurze Verzögerung, dann einpassen
                         setTimeout(() => {
                             zoomFitBtn.click();
-                            console.log('SVG eingepasst, Zoom:', currentZoom);
                         }, 200);
                         
                     } catch (error) {
-                        console.error('Fehler beim Laden:', error);
-                        alert('Fehler beim Laden der SVG-Datei: ' + error.message);
+                        console.error('Error loading file:', error);
+                        alert('Error loading SVG file: ' + error.message);
                     }
                 };
                 
                 reader.onerror = () => {
-                    alert('Fehler beim Lesen der Datei');
+                    alert('Error reading file');
                 };
                 
                 reader.readAsText(file);
                 fileInput.value = '';
             });
 
-            // Tastatur-Steuerung
+            // Keyboard controls
             window.addEventListener('keydown', (e) => {
                 switch(e.key) {
                     case '+':
@@ -564,6 +712,10 @@
                     case 'f':
                     case 'F':
                         zoomFitBtn.click();
+                        break;
+                    case 't':
+                    case 'T':
+                        thicknessToggle.click();
                         break;
                     case 'ArrowLeft':
                         panX -= 50;
@@ -584,13 +736,12 @@
                 }
             });
 
-            // Initial anwenden
+            // Initialize
             applyTransform();
+            applyLineThickness();
             
-            // Initial auf Einpassen setzen
             setTimeout(() => {
                 zoomFitBtn.click();
-                console.log('Initial Zoom:', currentZoom);
             }, 300);
         })();
     </script>
