@@ -72,31 +72,14 @@
             z-index: 1000;
             border: 1px solid rgba(0,0,0,0.1);
             cursor: grab;
-            transition: box-shadow 0.2s ease;
             touch-action: none;
             pointer-events: all;
-            bottom: var(--toolbar-offset);
-            left: 50%;
-            transform: translateX(-50%);
-            flex-direction: row;
         }
 
         .toolbar.dragging {
             cursor: grabbing;
             box-shadow: 0 12px 35px rgba(0,0,0,0.3);
-            transform: none !important;
-            left: auto !important;
-            top: auto !important;
-            right: auto !important;
-            bottom: auto !important;
-        }
-
-        .toolbar.top {
-            top: var(--toolbar-offset);
-            left: 50%;
-            transform: translateX(-50%);
-            flex-direction: row;
-            bottom: auto;
+            z-index: 1001;
         }
 
         .toolbar.bottom {
@@ -105,6 +88,16 @@
             transform: translateX(-50%);
             flex-direction: row;
             top: auto;
+            right: auto;
+        }
+
+        .toolbar.top {
+            top: var(--toolbar-offset);
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: row;
+            bottom: auto;
+            right: auto;
         }
 
         .toolbar.left {
@@ -113,6 +106,7 @@
             transform: translateY(-50%);
             flex-direction: column;
             bottom: auto;
+            right: auto;
         }
 
         .toolbar.right {
@@ -120,6 +114,7 @@
             top: 50%;
             transform: translateY(-50%);
             flex-direction: column;
+            bottom: auto;
             left: auto;
         }
 
@@ -699,7 +694,7 @@
                 }
             });
 
-            // IMPROVED TOOLBAR DRAGGING - No flicker, always visible
+            // SIMPLE, WORKING TOOLBAR DRAGGING
             let isDraggingToolbar = false;
             let dragOffsetX = 0;
             let dragOffsetY = 0;
@@ -709,20 +704,19 @@
                 
                 isDraggingToolbar = true;
                 
-                // Get current position without changing anything
+                // Get current position
                 const rect = toolbar.getBoundingClientRect();
                 dragOffsetX = e.clientX - rect.left;
                 dragOffsetY = e.clientY - rect.top;
                 
-                // Remove position classes but keep current position with inline styles
-                const computedStyle = window.getComputedStyle(toolbar);
+                // Set position using left/top only
                 toolbar.style.left = rect.left + 'px';
                 toolbar.style.top = rect.top + 'px';
                 toolbar.style.bottom = 'auto';
                 toolbar.style.right = 'auto';
                 toolbar.style.transform = 'none';
                 
-                // Remove all position classes
+                // Remove position classes
                 toolbar.classList.remove('top', 'bottom', 'left', 'right');
                 toolbar.classList.add('dragging');
                 dragHint.classList.add('show');
@@ -770,14 +764,14 @@
                     
                     const minDist = Math.min(distTop, distBottom, distLeft, distRight);
                     
-                    // Clear inline styles
+                    // Clear inline styles FIRST
                     toolbar.style.left = '';
                     toolbar.style.top = '';
                     toolbar.style.bottom = '';
                     toolbar.style.right = '';
                     toolbar.style.transform = '';
                     
-                    // Add appropriate class
+                    // Then add the appropriate class
                     if (minDist === distTop) {
                         toolbar.classList.add('top');
                     } else if (minDist === distBottom) {
